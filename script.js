@@ -1,40 +1,92 @@
 const taskInput = document.querySelector('#taskInput');
 const addTask = document.querySelector('#addTask');
 const taskList = document.querySelector('#taskList');
+const themeToggle = document.querySelector('#themeToggle');
 
-addTask.addEventListener('click',function(){
-    const addtaskInput = taskInput.value.trim();
-    console.log(addtaskInput)
-    if(addtaskInput == ''){
-        alert("Please fill");
+// Set the theme based on saved preference
+document.addEventListener('DOMContentLoaded', () => {
+    loadTasks();
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.body.classList.remove('light-theme', 'dark-theme');
+        document.body.classList.add(savedTheme);
     }
-    else{
-        const taskListEvent = document.createElement('li');
-        // taskListEvent.textContent = addtaskInput;
-        taskListEvent.innerHTML = `
-            <span>${addtaskInput}</span>
-            <button class="update">Update</button>
-            <button class="delete">Delete</button>
-        `;
-        
+});
 
-        console.log(taskListEvent)
-        taskList.appendChild(taskListEvent);
-        const deleteElement = taskListEvent.querySelector('button.delete');
-        const updateElement = taskListEvent.querySelector('button.update');
-        deleteElement.addEventListener('click',function(){
-            taskListEvent.remove();
-        });
+themeToggle.addEventListener('click', function () {
+    document.body.classList.toggle('dark-theme');
+    document.body.classList.toggle('light-theme');
 
-        
-        // Update Task
-        updateElement.addEventListener('click', function () {
-            const updatedTaskInput = prompt("Update the task:", addtaskInput);
-            if (updatedTaskInput !== null) {
-                taskListEvent.querySelector('span').textContent = updatedTaskInput;
-            }
-        });
+    const currentTheme = document.body.classList.contains('dark-theme') ? 'dark-theme' : 'light-theme';
+    localStorage.setItem('theme', currentTheme);
+});
 
-        taskInput.value = '';
+addTask.addEventListener('click', function () {
+    const task = taskInput.value.trim();
+    if (task === "") {
+        alert("Please enter a task");
+    } else {
+        addTaskDom(task);
+        saveDataLocalStorage(task);
+        taskInput.value = "";
     }
-})
+});
+
+function loadTasks() {
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    if (!Array.isArray(tasks)) {
+        tasks = [];
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+    tasks.forEach(task => {
+        addTaskDom(task);
+    });
+}
+
+function addTaskDom(task) {
+    const taskData = document.createElement("li");
+    taskData.innerHTML = `
+        <span>${task}</span>
+        <button class="update">Update</button>
+        <button class="delete">Delete</button>
+    `;
+    taskList.appendChild(taskData);
+
+    const deleteBtn = taskData.querySelector('button.delete');
+    const editBtn = taskData.querySelector('button.update');
+
+    deleteBtn.addEventListener('click', () => {
+        deleteLocalStorage(task, taskData);
+    });
+
+    editBtn.addEventListener('click', () => {
+        const editInput = prompt("Update task", task);
+        if (editInput !== null && editInput.trim() !== "") {
+            taskData.querySelector('span').textContent = editInput.trim();
+            updateTaskInLocalStorage(task, editInput.trim());
+        }
+    });
+}
+
+function saveDataLocalStorage(task) {
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks.push(task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+function deleteLocalStorage(task, taskData) {
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks = tasks.filter(t => t !== task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    taskData.remove();
+}
+
+function updateTaskInLocalStorage(oldTask, newTask) {
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    let index = tasks.indexOf(oldTask);
+    if (index !== -1) {
+        tasks[index] = newTask;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+}
